@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>COCOON generator</title>
+<meta name="description" content="Turn any photo into a depth map, right in your browser. Nothing uploads." />
+<meta name="theme-color" content="#f5f5f7" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -26,13 +28,16 @@
     --r-frame:44px; --r-hero:32px; --r-tile:26px; --r-half:22px;
     --gap:12px; --pad:20px;
     --sans:'Geist','Inter','Helvetica Neue',Arial,system-ui,sans-serif;
+    --edge:22px;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;min-height:100%;}
+  html{-webkit-text-size-adjust:100%;}
   body{
     font-family:var(--sans);font-size:14px;line-height:1.4;color:var(--ink);
     -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
-    min-height:100vh;
+    -webkit-tap-highlight-color:transparent;
+    min-height:100vh;min-height:100dvh;
     background-color:var(--fog-lo);
     background-image:
       radial-gradient(70% 55% at 16% 6%, rgba(255,255,255,.85) 0%, rgba(255,255,255,0) 62%),
@@ -46,31 +51,55 @@
     content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.07;mix-blend-mode:multiply;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
-  .page{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:26px 22px 36px;}
+  img{image-orientation:from-image;}
 
-  /* ---- header ---- */
-  .top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:0 10px 14px;}
-  .mark{display:flex;align-items:baseline;gap:10px;}
-  .mark .name{font-weight:600;font-size:14px;letter-spacing:.18em;}
-  .mark .kind{font-size:14px;color:var(--ink-soft);}
-  .pills{display:flex;gap:6px;flex-wrap:wrap;}
-  .pill{
-    display:inline-flex;align-items:center;gap:8px;background:var(--frame);color:var(--paper);
-    border-radius:999px;padding:7px 12px;font-size:12px;font-weight:500;letter-spacing:.01em;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.1);font-variant-numeric:tabular-nums;white-space:nowrap;
+  /* ---- top bar ---- */
+  .nav{
+    position:sticky;top:0;z-index:20;
+    background:rgba(245,245,247,.78);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);
+    backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:1px solid rgba(0,0,0,.09);
   }
-  .pill .dot{width:7px;height:7px;border-radius:50%;background:#8a8a8a;flex:none;transition:background .3s;}
-  .pill .dot.live{background:var(--accent);animation:pulse 1.2s ease-in-out infinite;}
+  .nav-in{
+    max-width:1180px;margin:0 auto;height:46px;display:flex;align-items:center;gap:24px;
+    padding-left:max(var(--edge),env(safe-area-inset-left));
+    padding-right:max(var(--edge),env(safe-area-inset-right));
+  }
+  .nav .mark{display:flex;align-items:center;gap:8px;flex:none;}
+  .nav .glyph{width:13px;height:13px;border-radius:50%;flex:none;
+    background:conic-gradient(from 210deg,#1d1d1f,#8e8e93,#1d1d1f);}
+  .nav .wordmark{font-size:12px;font-weight:600;letter-spacing:.2em;color:#1d1d1f;}
+  .nav .links{display:flex;align-items:center;gap:24px;min-width:0;}
+  .nav a{font-size:12px;color:#1d1d1f;opacity:.82;text-decoration:none;white-space:nowrap;}
+  .nav a:hover{opacity:1;}
+  .nav .right{margin-left:auto;font-size:12px;color:#1d1d1f;opacity:.66;white-space:nowrap;flex:none;}
+
+  .banner{background:#fff;border-bottom:1px solid rgba(0,0,0,.07);}
+  .banner-in{
+    max-width:1180px;margin:0 auto;padding:11px var(--edge);text-align:center;
+    font-size:12.5px;line-height:1.45;color:#1d1d1f;
+  }
+  .banner .sep{opacity:.32;padding:0 7px;}
+  .banner .stat{color:#6e6e73;font-variant-numeric:tabular-nums;}
+  .banner .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#b8b8bd;
+    margin-right:6px;vertical-align:1px;transition:background .3s;}
+  .banner .dot.live{background:var(--accent);animation:pulse 1.2s ease-in-out infinite;}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+  .page{
+    position:relative;z-index:1;max-width:1180px;margin:0 auto;
+    padding:26px max(var(--edge),env(safe-area-inset-right)) 40px max(var(--edge),env(safe-area-inset-left));
+  }
 
   /* ---- frame + board ---- */
   .frame{background:var(--frame);border-radius:var(--r-frame);padding:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);}
   .board{
     display:grid;gap:var(--gap);grid-template-columns:repeat(6,minmax(0,1fr));
     grid-template-areas:
-      "src src dep dep mod det"
-      "src src dep dep inv edg"
-      "rmp gen gen out out dls";
+      "src src dep dep qal dir"
+      "src src dep dep edg col"
+      "rmp gen gen out out dld";
   }
 
   /* ---- tile base ---- */
@@ -80,7 +109,7 @@
     color:var(--ink);background:var(--t-light);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.55);
     container-type:inline-size;min-width:0;min-height:0;
-    appearance:none;-webkit-appearance:none;
+    appearance:none;-webkit-appearance:none;touch-action:manipulation;
     transition:background-color .3s,color .3s,box-shadow .3s,transform .12s;
   }
   .tile::before{ /* soft membrane sheen */
@@ -94,16 +123,16 @@
   .sq{aspect-ratio:1/1;}
 
   .big{
-    font-size:clamp(20px,17cqi,40px);font-weight:500;letter-spacing:-.035em;line-height:1;
+    font-size:clamp(18px,15cqi,34px);font-weight:500;letter-spacing:-.03em;line-height:1.05;
     font-variant-numeric:tabular-nums;max-width:100%;overflow-wrap:anywhere;
   }
   .label{margin-top:8px;font-size:clamp(12px,7.2cqi,14px);line-height:1.25;color:var(--ink-soft);}
-  .note{margin-top:auto;padding-top:14px;font-size:clamp(11px,6.4cqi,12.5px);line-height:1.3;color:var(--ink-soft);}
+  .note{margin-top:auto;padding-top:14px;font-size:clamp(11px,6.2cqi,12.5px);line-height:1.3;color:var(--ink-soft);}
   .note:empty{padding-top:0;}
 
-  .src{grid-area:src;} .dep{grid-area:dep;} .mod{grid-area:mod;} .det{grid-area:det;}
-  .inv{grid-area:inv;} .edg{grid-area:edg;} .rmp{grid-area:rmp;} .gen{grid-area:gen;}
-  .out{grid-area:out;} .dls{grid-area:dls;}
+  .src{grid-area:src;} .dep{grid-area:dep;} .qal{grid-area:qal;} .dir{grid-area:dir;}
+  .edg{grid-area:edg;} .col{grid-area:col;} .rmp{grid-area:rmp;} .gen{grid-area:gen;}
+  .out{grid-area:out;} .dld{grid-area:dld;}
 
   /* ---- source ---- */
   .src{background:var(--t-mid);--sheen:.38;cursor:pointer;}
@@ -126,12 +155,13 @@
   }
 
   /* ---- depth ---- */
-  .dep{background:var(--t-char);color:var(--paper);--sheen:.05;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);user-select:none;-webkit-user-select:none;}
+  .dep{background:var(--t-char);color:var(--paper);--sheen:.05;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+    user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
   .dep canvas,.dep img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;}
   .dep #compare{display:block;opacity:0;transition:opacity .15s;}
   .dep.cmp #compare{opacity:1;}
   .dep .placeholder{position:absolute;inset:0;color:var(--paper-soft);font-size:clamp(12px,3.6cqi,14px);}
-  .dep .placeholder .ptext{position:absolute;left:var(--pad);bottom:var(--pad);}
+  .dep .placeholder .ptext{position:absolute;left:var(--pad);bottom:var(--pad);right:var(--pad);}
   .cross{position:absolute;left:50%;top:50%;width:36%;aspect-ratio:1/1;transform:translate(-50%,-50%);}
   .cross::before,.cross::after{content:"";position:absolute;background:rgba(255,255,255,.22);}
   .cross::before{left:0;right:0;top:50%;height:1px;}
@@ -162,6 +192,16 @@
   .toggle.on:hover{background:var(--t-char-hover);}
   .toggle.on .label,.toggle.on .note{color:var(--paper-soft);}
   .toggle:active{transform:scale(.985);}
+  /* colour toggle wears the gradient when it is on */
+  .col.on{background:linear-gradient(135deg,#30123b,#4055c8,#28bbeb,#4cea6a,#e4dc37,#fb8022,#7a0403);
+    color:#fff;--sheen:.1;}
+  .col.on .label,.col.on .note{color:rgba(255,255,255,.82);}
+  .col .swatch{
+    position:absolute;right:var(--pad);top:var(--pad);width:26px;height:26px;border-radius:9px;z-index:2;
+    background:linear-gradient(160deg,#30123b,#4055c8,#28bbeb,#4cea6a,#e4dc37,#fb8022,#7a0403);
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);
+  }
+  .col.on .swatch{box-shadow:inset 0 0 0 1px rgba(255,255,255,.55);}
 
   /* ---- near / far ramp: a swatch column sitting directly on the frame ---- */
   .rmp{background:transparent;box-shadow:none;padding:0;overflow:visible;}
@@ -197,13 +237,12 @@
   .out .big{font-size:clamp(20px,9.5cqi,40px);}
   .out .note b{font-weight:500;color:var(--ink);}
 
-  /* ---- downloads ---- */
-  .dls{display:flex;flex-direction:column;gap:var(--gap);min-width:0;}
-  .half{flex:1;padding:16px 18px;border-radius:var(--r-half);font-size:clamp(12px,8.5cqi,15px);font-weight:500;cursor:pointer;line-height:1.2;}
-  .half.dark:hover:not(:disabled){background:var(--t-char-hover);}
-  .half:not(.dark):hover:not(:disabled){background:var(--t-light-hover);}
-  .half:active:not(:disabled){transform:scale(.985);}
-  .half:disabled{opacity:.4;cursor:not-allowed;}
+  /* ---- download ---- */
+  .dld{cursor:pointer;}
+  .dld:hover:not(:disabled){background:var(--t-char-hover);}
+  .dld:active:not(:disabled){transform:scale(.985);}
+  .dld:disabled{opacity:.42;cursor:not-allowed;}
+  .dld .big{font-size:clamp(17px,13cqi,26px);}
 
   /* ---- error row ---- */
   .err{grid-column:1/-1;display:none;padding:16px var(--pad);font-size:13px;line-height:1.45;}
@@ -214,9 +253,14 @@
   .pick:has(select:focus-visible),
   .toggle:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:3px;}
 
-  /* ---- footer ---- */
-  .foot{padding:18px 12px 0;color:var(--ink-soft);font-size:12.5px;line-height:1.55;max-width:820px;}
+  /* ---- steps + footer ---- */
+  .steps{display:grid;gap:var(--gap);grid-template-columns:repeat(3,minmax(0,1fr));margin-top:16px;}
+  .step{background:rgba(255,255,255,.5);border-radius:18px;padding:16px 18px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);}
+  .step b{display:block;font-weight:500;font-size:13.5px;margin-bottom:3px;}
+  .step span{font-size:12.5px;color:var(--ink-soft);line-height:1.45;}
+  .foot{padding:22px 4px 0;color:var(--ink-soft);font-size:12.5px;line-height:1.6;max-width:760px;}
   .foot p{margin:0 0 6px;}
+  .foot .sig{margin-top:14px;color:var(--ink);font-size:12.5px;letter-spacing:.01em;}
   .foot .link{
     appearance:none;-webkit-appearance:none;border:0;background:none;padding:0;margin:0;font:inherit;
     color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer;
@@ -228,111 +272,123 @@
       grid-template-columns:repeat(4,minmax(0,1fr));
       grid-template-areas:
         "src src dep dep"
-        "mod det inv edg"
-        "rmp gen out dls";
+        "qal dir edg col"
+        "rmp gen out dld";
     }
   }
+  @media (max-width:700px){
+    .nav .links{display:none;}
+    .steps{grid-template-columns:1fr;}
+  }
   @media (max-width:620px){
-    :root{--r-frame:34px;--r-hero:26px;--r-tile:22px;--r-half:18px;--gap:10px;--pad:16px;}
-    .page{padding:18px 12px 28px;}
+    :root{--r-frame:34px;--r-hero:26px;--r-tile:22px;--r-half:18px;--gap:10px;--pad:16px;--edge:12px;}
+    .page{padding-top:18px;padding-bottom:30px;}
     .frame{padding:10px;}
-    .top{padding:0 6px 12px;}
+    .nav .wordmark{letter-spacing:.16em;}
     .board{
       grid-template-columns:repeat(2,minmax(0,1fr));
       grid-template-areas:
         "src src"
         "dep dep"
-        "mod det"
-        "inv edg"
+        "qal dir"
+        "edg col"
         "gen gen"
         "out out"
-        "rmp dls";
+        "rmp dld";
     }
   }
   @media (prefers-reduced-motion:reduce){
     .dep.scanning .scanline{animation:none;opacity:.6;top:50%;}
     .gen.busy.indet .fill{animation:none;opacity:.7;}
-    .pill .dot.live{animation:none;}
+    .banner .dot.live{animation:none;}
     *{transition:none !important;}
   }
 </style>
 </head>
 <body>
-<div class="page">
-  <header class="top">
-    <div class="mark"><span class="name">COCOON</span><span class="kind">generator</span></div>
-    <div class="pills">
-      <span class="pill"><i class="dot" id="dot"></i><span id="rBackend">—</span></span>
-      <span class="pill"><span id="rModel">da-v2-small</span></span>
-      <span class="pill" aria-live="polite"><span id="rState">idle</span></span>
-    </div>
-  </header>
 
+<nav class="nav">
+  <div class="nav-in">
+    <span class="mark"><i class="glyph"></i><span class="wordmark">COCOON</span></span>
+    <span class="links">
+      <a href="#tool">Generator</a>
+      <a href="#how">How it works</a>
+      <a href="#privacy">Privacy</a>
+    </span>
+    <span class="right">cocoon generator by ALI&#174;</span>
+  </div>
+</nav>
+<div class="banner">
+  <div class="banner-in">
+    Everything runs on your device — your photos never upload.
+    <span class="sep">·</span><span class="stat"><i class="dot" id="dot"></i><span id="rBackend">checking…</span></span>
+    <span class="sep">·</span><span class="stat" aria-live="polite" id="rState">ready</span>
+  </div>
+</div>
+
+<div class="page" id="tool">
   <div class="frame">
     <div class="board">
 
-      <!-- source -->
-      <div class="tile hero src" id="drop" role="button" tabindex="0" aria-label="Drop or choose an image">
+      <!-- 1. the photo -->
+      <div class="tile hero src" id="drop" role="button" tabindex="0" aria-label="Add a photo">
         <div class="hint" id="dropHint">
-          <div class="big">Drop an image</div>
-          <div class="label">or click to browse<br />png, jpg, webp</div>
+          <div class="big">Add a photo</div>
+          <div class="label">tap or drag one in<br />jpg, png, webp</div>
         </div>
         <img id="thumb" alt="" />
-        <div class="chips" id="fileMeta" style="visibility:hidden"><span class="chip name" id="fName">—</span><span class="chip" id="fDims">—</span><span class="chip replace">Replace</span></div>
+        <div class="chips" id="fileMeta" style="visibility:hidden"><span class="chip name" id="fName">—</span><span class="chip" id="fDims">—</span><span class="chip replace">Change</span></div>
       </div>
 
-      <!-- depth -->
-      <div class="tile hero dep" id="stage" tabindex="0" aria-label="Depth map. Hold to compare with the source.">
-        <div class="placeholder" id="placeholder"><span class="cross"></span><span class="ptext">Depth map appears here</span></div>
+      <!-- 2. the result -->
+      <div class="tile hero dep" id="stage" tabindex="0" aria-label="Your depth map. Hold to see the original photo.">
+        <div class="placeholder" id="placeholder"><span class="cross"></span><span class="ptext">Your depth map appears here</span></div>
         <canvas id="canvas"></canvas>
         <img id="compare" alt="" />
         <i class="scanline"></i>
-        <div class="chips right"><span class="chip">Hold to compare</span></div>
+        <div class="chips right"><span class="chip">Hold to see the photo</span></div>
       </div>
 
-      <!-- model -->
-      <div class="tile sq pick mod">
-        <span class="big" id="modelBig">Small</span>
-        <span class="label">Model</span>
-        <span class="note" id="modelNote">commercial use ok, fast</span>
-        <select id="model" aria-label="Model">
-          <option value="small|fp32" data-big="Small" data-note="commercial use ok, full precision" selected>Small — full precision, commercial ok</option>
-          <option value="small|fp16" data-big="Fast" data-note="Small with 16-bit weights, about twice as quick, a little less precise">Fast — Small with 16-bit weights</option>
-          <option value="base|fp32" data-big="Base" data-note="non-commercial, sharper, slower">Base — non-commercial, sharper, slower</option>
+      <!-- quality: one knob, sets both the model and how closely it reads the photo -->
+      <div class="tile sq pick qal">
+        <span class="big" id="qualBig">Balanced</span>
+        <span class="label">Quality</span>
+        <span class="note" id="qualNote">good detail, normal wait</span>
+        <select id="quality" aria-label="Quality">
+          <option value="fast" data-big="Fast" data-note="quickest — best on phones">Fast — quickest, best on phones</option>
+          <option value="balanced" data-big="Balanced" data-note="good detail, normal wait" selected>Balanced — good detail</option>
+          <option value="best" data-big="Best" data-note="sharpest, slowest, personal use only">Best — sharpest, slowest</option>
         </select>
       </div>
 
-      <!-- detail -->
-      <div class="tile sq pick det">
-        <span class="big" id="detailBig">896</span>
-        <span class="label">Detail</span>
-        <span class="note" id="detailNote">high, sharper edges</span>
-        <select id="detail" aria-label="Detail, inference resolution">
-          <option value="518" data-big="518" data-note="standard, fastest">Standard 518 — fastest</option>
-          <option value="896" data-big="896" data-note="high, sharper edges" selected>High 896 — sharper edges</option>
-          <option value="1204" data-big="1204" data-note="max, sharpest, heavy">Max 1204 — sharpest, heavy</option>
-        </select>
-      </div>
-
-      <!-- invert -->
-      <label class="tile sq toggle inv" id="invTile" for="invert">
+      <!-- which side is white -->
+      <label class="tile sq toggle dir" id="invTile" for="invert">
         <input type="checkbox" id="invert" />
-        <span class="big" id="invBig">Off</span>
-        <span class="label">Invert</span>
-        <span class="note" id="invNote">white is near</span>
+        <span class="big" id="invBig">White&nbsp;=&nbsp;close</span>
+        <span class="label">Depth direction</span>
+        <span class="note" id="invNote">tap to flip it around</span>
       </label>
 
       <!-- edge-aware -->
       <label class="tile sq toggle edg" id="edgeTile" for="edgeAware">
         <input type="checkbox" id="edgeAware" />
         <span class="big" id="edgeBig">Off</span>
-        <span class="label">Edge-aware</span>
-        <span class="note">snaps depth edges to the photo</span>
+        <span class="label">Sharp edges</span>
+        <span class="note">follows the outlines in your photo instead of blurring them</span>
       </label>
 
-      <!-- near / far ramp -->
-      <div class="tile sq rmp" id="ramp" aria-label="Depth ramp, near to far">
-        <div class="stack"><span>Near</span><span></span><span></span><span></span><span>Far</span></div>
+      <!-- colour -->
+      <label class="tile sq toggle col" id="colTile" for="colorize">
+        <input type="checkbox" id="colorize" />
+        <i class="swatch"></i>
+        <span class="big" id="colBig">Off</span>
+        <span class="label">Color</span>
+        <span class="note">rainbow version, for looks — grey is the one you edit with</span>
+      </label>
+
+      <!-- close / far key -->
+      <div class="tile sq rmp" id="ramp" aria-label="Key: closest to farthest">
+        <div class="stack" id="stack"><span>Closest</span><span></span><span></span><span></span><span>Farthest</span></div>
       </div>
 
       <!-- generate -->
@@ -340,38 +396,46 @@
         <span class="fill" id="pFill"></span>
         <span class="big" id="runBig">Generate</span>
         <span class="label" id="runLabel">depth map</span>
-        <span class="note" id="runNote">add an image to start</span>
+        <span class="note" id="runNote">add a photo to start</span>
       </button>
 
-      <!-- output readout -->
+      <!-- result size -->
       <div class="tile out">
         <span class="big" id="oDims">—</span>
-        <span class="label">Output, 16-bit, matches the source</span>
-        <span class="note">native depth <b id="nDims">—</b></span>
+        <span class="label">Result size</span>
+        <span class="note" id="outNote">same as the photo you add</span>
       </div>
 
-      <!-- downloads -->
-      <div class="dls">
-        <button class="tile half dark" id="dl16" disabled>16-bit PNG</button>
-        <button class="tile half" id="dl8" disabled>8-bit PNG</button>
-      </div>
+      <!-- download -->
+      <button class="tile dld dark" id="dl" disabled>
+        <span class="big">Download</span>
+        <span class="note" id="dlNote">16-bit PNG</span>
+      </button>
 
       <div class="tile err" id="err" role="alert"></div>
     </div>
   </div>
 
-  <footer class="foot">
-    <p>Output matches the source resolution (4K in, 4K out) at 16-bit. Edge-aware snaps depth edges to the real photo so boundaries stay crisp instead of soft. 8-bit is a quick-test download.</p>
-    <p>White is near by default. Small is Apache-2.0; Base and Large are CC-BY-NC. For the Large model at full quality, use the desktop app.</p>
-    <p><span id="cacheLine">Each model downloads once (50–100&nbsp;MB) and is kept on this device, so later sessions skip it.</span> <button class="link" id="clearCache" type="button">Clear kept models</button></p>
+  <div class="steps" id="how">
+    <div class="step"><b>1 &nbsp;Add a photo</b><span>Tap the first tile and pick any picture. It stays on your phone or laptop.</span></div>
+    <div class="step"><b>2 &nbsp;Hit Generate</b><span>The first run downloads the model once, then it is kept for next time. After that it is quick.</span></div>
+    <div class="step"><b>3 &nbsp;Download</b><span>You get a greyscale map: white is what is closest. Drop it into a displacement or depth slot.</span></div>
+  </div>
+
+  <footer class="foot" id="privacy">
+    <p><span id="cacheLine">The model downloads once (about 50&nbsp;MB) and is kept on this device, so later visits skip it.</span> <button class="link" id="clearCache" type="button">Clear saved model</button></p>
+    <p class="sig">made by ALI&#174; &nbsp;·&nbsp; inspired by yeat's cocoon</p>
   </footer>
 </div>
 
 <script type="module">
 import { pipeline, env } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/+esm";
 env.allowLocalModels = false;
+try{
+  env.backends.onnx.wasm.numThreads = Math.max(1, Math.min(4, navigator.hardwareConcurrency || 1));
+}catch(e){}
 
-// ---- model store: IndexedDB, so a download survives closing the tab even when this file is opened directly ----
+// ---- model store: IndexedDB, so a download survives closing the tab ----
 const modelStore = (()=>{
   const DB="cocoon-models", STORE="files"; let dbp=null;
   const open=()=> dbp || (dbp=new Promise((res,rej)=>{
@@ -387,7 +451,6 @@ const modelStore = (()=>{
   const keyOf=(k)=> typeof k==="string" ? k : ((k&&k.url)||String(k));
   return {
     ready:open, hits:new Set(), stored:new Set(),
-    // the two methods Transformers.js calls on a custom cache
     async match(k){
       const key=keyOf(k);
       try{
@@ -413,27 +476,50 @@ try{ await modelStore.ready(); env.useBrowserCache=false; env.useCustomCache=tru
 catch(e){ console.warn("Model store unavailable; downloads won't persist between sessions:", e); }
 
 const MODELS = { small:"onnx-community/depth-anything-v2-small", base:"onnx-community/depth-anything-v2-base" };
+// one plain-English knob -> the model, its weight precision and how closely it reads the photo
+const QUALITY = {
+  fast:     { model:"small", dtype:"fp16", detail:518  },
+  balanced: { model:"small", dtype:"fp32", detail:896  },
+  best:     { model:"base",  dtype:"fp32", detail:1204 }
+};
 
 // ---- element refs ----
 const $ = (id) => document.getElementById(id);
 const drop=$("drop"), thumb=$("thumb"), dropHint=$("dropHint"), fileMeta=$("fileMeta"), fName=$("fName"), fDims=$("fDims");
-const modelSel=$("model"), invert=$("invert"), invNote=$("invNote"), run=$("run");
-const edgeAware=$("edgeAware"), detailSel=$("detail"), nDims=$("nDims");
-const pFill=$("pFill"), err=$("err"), runBig=$("runBig"), runLabel=$("runLabel"), runNote=$("runNote");
-const stage=$("stage"), placeholder=$("placeholder"), canvas=$("canvas"), ctx=canvas.getContext("2d"), compare=$("compare");
-const ramp=$("ramp"), oDims=$("oDims"), dl16=$("dl16"), dl8=$("dl8");
-const rBackend=$("rBackend"), rModel=$("rModel"), rState=$("rState"), dot=$("dot");
-const modelBig=$("modelBig"), modelNote=$("modelNote"), detailBig=$("detailBig"), detailNote=$("detailNote");
-const invTile=$("invTile"), invBig=$("invBig"), edgeTile=$("edgeTile"), edgeBig=$("edgeBig");
+const qualSel=$("quality"), qualBig=$("qualBig"), qualNote=$("qualNote");
+const invert=$("invert"), invTile=$("invTile"), invBig=$("invBig"), invNote=$("invNote");
+const edgeAware=$("edgeAware"), edgeTile=$("edgeTile"), edgeBig=$("edgeBig");
+const colorize=$("colorize"), colTile=$("colTile"), colBig=$("colBig");
+const run=$("run"), pFill=$("pFill"), err=$("err"), runBig=$("runBig"), runLabel=$("runLabel"), runNote=$("runNote");
+const stage=$("stage"), placeholder=$("placeholder"), canvas=$("canvas"), compare=$("compare");
+const ctx=canvas.getContext("2d",{alpha:false});
+const ramp=$("ramp"), stack=$("stack"), oDims=$("oDims"), outNote=$("outNote"), dl=$("dl"), dlNote=$("dlNote");
+const rBackend=$("rBackend"), rState=$("rState"), dot=$("dot");
 const cacheLine=$("cacheLine"), clearCache=$("clearCache");
 
 let currentURL=null, currentName="", estimator=null, loadedKey=null, device="wasm";
-let blob16=null, blob8=null, pending16=null, runSeq=0;
-let srcW=0, srcH=0;  // source image resolution — output is scaled to match this
-let srcImg=null;     // the loaded source image, used as the edge-aware guide
+let blobGrey=null, blobColor=null, pendingGrey=null, runSeq=0;
+let srcW=0, srcH=0, srcImg=null;
+let lastU16=null, lastW=0, lastH=0;   // kept so the Color toggle can repaint without re-running the model
 let busy=false, warm=false, gpuF16=false;
 
-// ---- backend probe: ask for a real adapter; a software (fallback) adapter is slower than wasm, so skip it ----
+// ---- device class: phones get a memory ceiling so the tab doesn't get killed mid-run ----
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+              (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+const isMobile = isIOS || /Android/i.test(navigator.userAgent) ||
+                 (matchMedia("(pointer:coarse)").matches && matchMedia("(max-width:1024px)").matches);
+const RAM = navigator.deviceMemory || (isMobile ? 4 : 8);
+// every full-res buffer in the upscale path costs w*h*4 bytes, and there are several live at once
+const MAX_OUT = isMobile ? (RAM<=3 ? 1400 : 2048) : 4096;
+
+if(isMobile) qualSel.value="fast";
+// Safari only got CompressionStream in 16.4; without it the 16-bit encoder can't run
+const HAS_CS = (typeof CompressionStream !== "undefined");
+
+// let the browser paint between the heavy stages
+const yieldUI = ()=> new Promise(r=> requestAnimationFrame(()=> setTimeout(r,0)));
+
+// ---- backend probe ----
 async function probeDevice(){
   if(!navigator.gpu) return "wasm";
   try{
@@ -447,17 +533,17 @@ async function probeDevice(){
 }
 const deviceReady = probeDevice().then(d=>{
   const [dev,vendor]=d.split("|"); device=dev;
-  rBackend.textContent = dev==="webgpu" ? "webgpu"+(vendor? ", "+vendor : "") : "wasm, cpu";
-  if(dev==="wasm"){ const o=modelSel.options[1]; o.dataset.note="same as Small on cpu"; syncPick(modelSel,modelBig,modelNote); }
+  rBackend.textContent = dev==="webgpu" ? ("running on the graphics chip"+(vendor? " ("+vendor+")":"")) : "running on the processor";
+  syncQuality();
 });
 
-// ---- kept-model footer line ----
+// ---- saved-model line ----
 const fmtMB=(b)=>(b/1048576).toFixed(0)+" MB";
 async function refreshCacheLine(extra){
-  if(!storeOK){ cacheLine.textContent="This browser can't keep models between sessions here, so each session re-downloads (50–100 MB)."; clearCache.style.display="none"; return; }
+  if(!storeOK){ cacheLine.textContent="This browser can't keep the model between visits, so each visit downloads it again (about 50 MB)."; clearCache.style.display="none"; return; }
   try{
     const n=await modelStore.size();
-    cacheLine.textContent = (n? "Models kept on this device: "+fmtMB(n)+"." : "Each model downloads once (50–100 MB) and is kept on this device, so later sessions skip it.") + (extra? " "+extra : "");
+    cacheLine.textContent = (n? "Saved on this device: "+fmtMB(n)+"." : "The model downloads once (about 50 MB) and is kept on this device, so later visits skip it.") + (extra? " "+extra : "");
   }catch(e){}
 }
 refreshCacheLine();
@@ -467,7 +553,7 @@ clearCache.addEventListener("click", async ()=>{
   estimator=null; loadedKey=null; refreshCacheLine("Cleared.");
 });
 
-// ---- state + progress: the header pill and the Generate tile read the same state ----
+// ---- state + progress ----
 function setState(s){ rState.textContent = s; if(busy) runLabel.textContent = s; }
 function setBusy(on){
   busy=on; run.classList.toggle("busy",on); dot.classList.toggle("live",on);
@@ -481,58 +567,131 @@ function setIndeterminate(big,label){ run.classList.add("indet"); pFill.style.he
 function showErr(msg){ err.textContent = msg; err.classList.add("on"); }
 function clearErr(){ err.classList.remove("on"); }
 
+// ---- turbo colour map, built once into a 256-entry lookup table ----
+const TURBO = (()=>{
+  const stops=[[0,48,18,59],[.13,65,69,171],[.25,57,118,215],[.38,27,166,205],[.5,37,203,160],
+               [.63,110,227,97],[.75,188,229,49],[.87,243,186,35],[.95,250,129,17],[1,122,4,3]];
+  const lut=new Uint8Array(256*3);
+  for(let i=0;i<256;i++){
+    const t=i/255; let a=stops[0], b=stops[stops.length-1];
+    for(let s=0;s<stops.length-1;s++){ if(t>=stops[s][0] && t<=stops[s+1][0]){ a=stops[s]; b=stops[s+1]; break; } }
+    const f=(b[0]-a[0])? (t-a[0])/(b[0]-a[0]) : 0;
+    lut[i*3]  = Math.round(a[1]+(b[1]-a[1])*f);
+    lut[i*3+1]= Math.round(a[2]+(b[2]-a[2])*f);
+    lut[i*3+2]= Math.round(a[3]+(b[3]-a[3])*f);
+  }
+  return lut;
+})();
+const turboCSS=(t)=>{ const i=Math.max(0,Math.min(255,Math.round(t*255)))*3; return "rgb("+TURBO[i]+","+TURBO[i+1]+","+TURBO[i+2]+")"; };
+
 // ---- controls ----
-function syncPick(sel,big,note){ const o=sel.options[sel.selectedIndex]; big.textContent=o.dataset.big; note.textContent=o.dataset.note; }
-function syncToggle(){
+function syncQuality(){
+  const o=qualSel.options[qualSel.selectedIndex];
+  qualBig.textContent=o.dataset.big;
+  let note=o.dataset.note;
+  if(device==="wasm" && qualSel.value==="fast") note="quickest — best on phones";
+  if(isMobile && qualSel.value==="best") note="very heavy on a phone";
+  qualNote.textContent=note;
+  loadedKey=null; estimator=null;
+}
+function syncToggles(){
   invTile.classList.toggle("on",invert.checked);
-  invBig.textContent = invert.checked ? "On" : "Off";
-  invNote.textContent = invert.checked ? "white is far" : "white is near";
+  invBig.innerHTML = invert.checked ? "White&nbsp;=&nbsp;far" : "White&nbsp;=&nbsp;close";
+  invNote.textContent = invert.checked ? "farthest things are white now" : "tap to flip it around";
   ramp.classList.toggle("inv", invert.checked);
   edgeTile.classList.toggle("on",edgeAware.checked);
   edgeBig.textContent = edgeAware.checked ? "On" : "Off";
+  colTile.classList.toggle("on",colorize.checked);
+  colBig.textContent = colorize.checked ? "On" : "Off";
+  dlNote.textContent = colorize.checked ? "color PNG" : (HAS_CS ? "16-bit PNG" : "PNG");
+  paintRamp();
 }
-invert.addEventListener("change", syncToggle);
-edgeAware.addEventListener("change", syncToggle);
-detailSel.addEventListener("change", ()=>syncPick(detailSel,detailBig,detailNote));
-modelSel.addEventListener("change", ()=>{
-  syncPick(modelSel,modelBig,modelNote);
-  const [which,dt]=modelSel.value.split("|");
-  rModel.textContent = "da-v2-"+which+(dt==="fp16"? " fp16":"");
-  loadedKey=null; estimator=null; // force reload of the chosen model on next run
-});
-syncPick(modelSel,modelBig,modelNote); syncPick(detailSel,detailBig,detailNote); syncToggle();
+function paintRamp(){
+  const kids=stack.children;
+  for(let i=0;i<5;i++){
+    if(colorize.checked){
+      let t=i/4; if(invert.checked) t=1-t;
+      kids[i].style.background=turboCSS(t);
+      kids[i].style.color = (t<0.22||t>0.86) ? "#fff" : "#141414";
+    }else{
+      kids[i].style.background=""; kids[i].style.color="";
+    }
+  }
+}
+qualSel.addEventListener("change", syncQuality);
+invert.addEventListener("change", ()=>{ syncToggles(); repaint(); });
+edgeAware.addEventListener("change", syncToggles);
+colorize.addEventListener("change", ()=>{ syncToggles(); repaint(); });
+syncQuality(); syncToggles();
+
+// repaint the preview from the depth values already in memory (colour / direction flips are free)
+function repaint(){
+  if(!lastU16) return;
+  const w=lastW, h=lastH, n=w*h;
+  const rgba=new Uint8ClampedArray(n*4);
+  const inv=invert.checked, col=colorize.checked;
+  for(let i=0;i<n;i++){
+    let v=lastU16[i]/65535; if(inv) v=1-v;
+    if(col){ const k=(v*255|0)*3; rgba[i*4]=TURBO[k]; rgba[i*4+1]=TURBO[k+1]; rgba[i*4+2]=TURBO[k+2]; }
+    else { const g=Math.round(v*255); rgba[i*4]=g; rgba[i*4+1]=g; rgba[i*4+2]=g; }
+    rgba[i*4+3]=255;
+  }
+  ctx.putImageData(new ImageData(rgba,w,h),0,0);
+  blobGrey=null; blobColor=null; pendingGrey=null;
+  if(stage.classList.contains("ready")) queueEncode();
+}
 
 // ---- file handling ----
-function loadFile(file){
-  if(!file || !file.type.startsWith("image/")){ showErr("That isn't an image file. Use png, jpg or webp."); return; }
+async function loadFile(file){
+  if(!file || !(file.type||"").startsWith("image/")){ showErr("That isn't an image. Use a jpg, png or webp."); return; }
   clearErr();
   if(currentURL) URL.revokeObjectURL(currentURL);
+  if(srcImg && srcImg.close) { try{ srcImg.close(); }catch(e){} }
   currentURL = URL.createObjectURL(file);
-  currentName = file.name;
-  const img = new Image();
-  img.onload = ()=>{
-    srcW = img.naturalWidth; srcH = img.naturalHeight; srcImg = img;
-    thumb.src = currentURL; thumb.style.display="block"; dropHint.style.display="none";
-    fName.textContent = file.name.length>26 ? file.name.slice(0,24)+"…" : file.name;
-    fDims.textContent = srcW+"×"+srcH;
-    fileMeta.style.visibility="visible";
-    stage.classList.remove("ready","cmp"); // the old depth no longer matches this source
-    runNote.textContent="";
-    run.disabled=false;
-  };
-  img.src = currentURL;
-}
+  currentName = file.name || "image";
 
+  try{
+    let img;
+    if(window.createImageBitmap && !isIOS){
+      try{ img = await createImageBitmap(file,{imageOrientation:"from-image"}); }
+      catch(e){ img = await decodeViaImg(currentURL); }
+    } else { img = await decodeViaImg(currentURL); }
+    srcImg = img;
+    srcW = img.width; srcH = img.height;
+  }catch(e){
+    showErr(/hei[cf]/i.test(file.type+file.name)
+      ? "This browser can't open HEIC photos. On iPhone, pick the photo from the library (Safari converts it) or save it as JPEG first."
+      : "Couldn't open that image. Try a jpg or png.");
+    return;
+  }
+
+  thumb.src = currentURL; thumb.style.display="block"; dropHint.style.display="none";
+  fName.textContent = currentName; fDims.textContent = srcW+"×"+srcH;
+  fileMeta.style.visibility="visible";
+
+  let outW=srcW, outH=srcH; const L=Math.max(outW,outH);
+  if(L>MAX_OUT){ const s=MAX_OUT/L; outW=Math.round(outW*s); outH=Math.round(outH*s); }
+  oDims.textContent = outW+"×"+outH;
+  outNote.textContent = (outW===srcW) ? "same as your photo" : "scaled down to fit this device's memory";
+
+  run.disabled=false; runNote.textContent = warm ? "" : "first run downloads the model once";
+  dl.disabled=true; lastU16=null; blobGrey=null; blobColor=null; pendingGrey=null;
+  canvas.style.display="none"; stage.classList.remove("ready","cmp"); placeholder.style.display="block";
+  setState("ready");
+}
+function decodeViaImg(url){
+  return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=url; });
+}
 drop.addEventListener("click", ()=>{
   const inp=document.createElement("input"); inp.type="file"; inp.accept="image/*";
-  inp.onchange=()=>loadFile(inp.files[0]); inp.click();
+  inp.addEventListener("change",()=>loadFile(inp.files[0])); inp.click();
 });
 drop.addEventListener("keydown",(e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); drop.click(); }});
 drop.addEventListener("dragover",(e)=>{ e.preventDefault(); drop.classList.add("over"); });
 drop.addEventListener("dragleave",()=>drop.classList.remove("over"));
 drop.addEventListener("drop",(e)=>{ e.preventDefault(); drop.classList.remove("over"); loadFile(e.dataTransfer.files[0]); });
 
-// ---- hold the depth tile to see the source underneath ----
+// ---- hold to compare ----
 function cmpOn(){ if(stage.classList.contains("ready")) stage.classList.add("cmp"); }
 function cmpOff(){ stage.classList.remove("cmp"); }
 stage.addEventListener("pointerdown", cmpOn);
@@ -542,7 +701,7 @@ window.addEventListener("pointerup", cmpOff);
 stage.addEventListener("keydown",(e)=>{ if(e.key===" "){ e.preventDefault(); cmpOn(); }});
 stage.addEventListener("keyup",(e)=>{ if(e.key===" ") cmpOff(); });
 
-// ---- 16-bit grayscale PNG encoder (validated) ----
+// ---- 16-bit PNG encoder ----
 const CRC_TABLE=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
 function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC_TABLE[(c^b[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
 function u32(n){return Uint8Array.from([(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255]);}
@@ -554,13 +713,13 @@ function chunk(type,data){
   out.set(u32(data.length),0); out.set(body,4); out.set(u32(crc),4+body.length);
   return out;
 }
-async function encodePNG16(u16,w,h){
+async function encodePNG16(u16,w,h,inv){
   const ihdr=new Uint8Array(13);
   ihdr.set(u32(w),0); ihdr.set(u32(h),4);
   ihdr[8]=16; ihdr[9]=0; ihdr[10]=0; ihdr[11]=0; ihdr[12]=0;
   const raw=new Uint8Array(h*(1+w*2)); let p=0;
   for(let y=0;y<h;y++){ raw[p++]=0;
-    for(let x=0;x<w;x++){ const v=u16[y*w+x]; raw[p++]=(v>>>8)&255; raw[p++]=v&255; } }
+    for(let x=0;x<w;x++){ let v=u16[y*w+x]; if(inv) v=65535-v; raw[p++]=(v>>>8)&255; raw[p++]=v&255; } }
   const cs=new CompressionStream("deflate");
   const wr=cs.writable.getWriter(); wr.write(raw); wr.close();
   const comp=new Uint8Array(await new Response(cs.readable).arrayBuffer());
@@ -571,7 +730,7 @@ async function encodePNG16(u16,w,h){
   return total;
 }
 
-// ---- bilinear upscale of the normalized float depth (keeps 16-bit precision) ----
+// ---- resampling + edge-aware upsample ----
 function bilinearUpscale(src,sw,sh,dw,dh){
   const dst=new Float32Array(dw*dh);
   const sx=sw/dw, sy=sh/dh;
@@ -586,11 +745,9 @@ function bilinearUpscale(src,sw,sh,dw,dh){
   }
   return dst;
 }
-
-// ---- edge-aware upsampling: depth VALUES from the model, EDGES from the photo ----
 function boxFilter(src,w,h,r){
   const iw=w+1; const I=new Float64Array(iw*(h+1));
-  for(let y=0;y<h;y++){ let rs=0; for(let x=0;x<w;x++){ rs+=src[y*w+x]; I[(y+1)*iw+(x+1)]=I[y*iw+(x+1)]+rs; } }
+  for(let y=0;y<h;y++){ let s=0; for(let x=0;x<w;x++){ s+=src[y*w+x]; I[(y+1)*iw+(x+1)]=I[y*iw+(x+1)]+s; } }
   const o=new Float32Array(w*h);
   for(let y=0;y<h;y++){ const y0=Math.max(0,y-r), y1=Math.min(h-1,y+r);
     for(let x=0;x<w;x++){ const x0=Math.max(0,x-r), x1=Math.min(w-1,x+r);
@@ -602,8 +759,8 @@ function downsample(src,sw,sh,dw,dh){
   const d=new Float32Array(dw*dh), sx=sw/dw, sy=sh/dh;
   for(let y=0;y<dh;y++){ const y0=Math.floor(y*sy), y1=Math.max(y0+1,Math.min(sh,Math.floor((y+1)*sy)));
     for(let x=0;x<dw;x++){ const x0=Math.floor(x*sx), x1=Math.max(x0+1,Math.min(sw,Math.floor((x+1)*sx)));
-      let s=0,n=0; for(let yy=y0;yy<y1;yy++)for(let xx=x0;xx<x1;xx++){s+=src[yy*sw+xx];n++;}
-      d[y*dw+x]=s/n; } }
+      let s=0,n=0; for(let yy=y0;yy<y1;yy++) for(let xx=x0;xx<x1;xx++){ s+=src[yy*sw+xx]; n++; }
+      d[y*dw+x]=s/(n||1); } }
   return d;
 }
 function guidedUpsample(gF,gw,gh,dL,lw,lh,r,eps){
@@ -624,17 +781,21 @@ function buildGuide(image,w,h){
   const cx=c.getContext("2d",{willReadFrequently:true}); cx.drawImage(image,0,0,w,h);
   const px=cx.getImageData(0,0,w,h).data; const g=new Float32Array(w*h);
   for(let i=0;i<w*h;i++){ g[i]=(0.299*px[i*4]+0.587*px[i*4+1]+0.114*px[i*4+2])/255; }
+  c.width=c.height=1;   // hand the backing store back right away
   return g;
 }
 
-// ---- push the model to a higher inference resolution for sharper depth ----
-function prepInput(image, targetLong){
-  const w=image.naturalWidth||image.width, h=image.naturalHeight||image.height;
+// ---- push the model to the chosen inference resolution ----
+async function prepInput(image, targetLong){
+  const w=image.width, h=image.height;
   const s=targetLong/Math.max(w,h);
   let tw=Math.max(14,Math.round(w*s/14)*14), th=Math.max(14,Math.round(h*s/14)*14);
   const c=document.createElement("canvas"); c.width=tw; c.height=th;
   c.getContext("2d").drawImage(image,0,0,tw,th);
-  return { url:c.toDataURL("image/png"), w:tw, h:th };
+  // a blob url is far cheaper in memory than a base64 data url, which matters on phones
+  const blob = await new Promise(res=> c.toBlob(res,"image/png"));
+  c.width=c.height=1;
+  return { url:URL.createObjectURL(blob), w:tw, h:th };
 }
 function forceRes(est, tw, th){
   const p0=est.processor||{};
@@ -647,24 +808,22 @@ function forceRes(est, tw, th){
 }
 
 // ---- model loading ----
-// WebGPU runs the 32-bit weights by default (full depth precision) or 16-bit when "Fast" is chosen and the GPU supports it;
-// the cpu path always uses the 8-bit quantized file, which is what runs quickest in wasm.
 async function ensureModel(){
   await deviceReady;
-  const [which,wanted]=modelSel.value.split("|");
-  const modelId=MODELS[which];
-  let dtype = device==="webgpu" ? ((wanted==="fp16" && gpuF16) ? "fp16" : "fp32") : "q8";
+  const q=QUALITY[qualSel.value];
+  const modelId=MODELS[q.model];
+  let dtype = device==="webgpu" ? ((q.dtype==="fp16" && gpuF16) ? "fp16" : "fp32") : "q8";
   const key = modelId+"|"+dtype+"|"+device;
   if(estimator && loadedKey===key) return estimator;
-  setIndeterminate("Loading","loading model");
-  setState("loading model");
+  estimator=null;
+  setIndeterminate("Loading","getting the model");
+  setState("getting the model");
   const before=new Set(modelStore.stored);
   const progress_callback=(d)=>{
     if(d.status==="progress" && d.total){
       const pct=Math.min(100,Math.round((d.loaded/d.total)*100));
-      const file=d.file? d.file.split("/").pop():"model";
       const fromDisk=[...modelStore.hits].some(k=>d.file && k.endsWith("/"+d.file));
-      setProgress(pct, (fromDisk? "loading ":"downloading ")+file);
+      setProgress(pct, fromDisk? "loading from this device" : "downloading the model");
     }
   };
   const attempt=(dev,dt)=>pipeline("depth-estimation", modelId, { device:dev, dtype:dt, progress_callback });
@@ -673,55 +832,50 @@ async function ensureModel(){
   }catch(e){
     console.warn("load failed on", device, dtype, e);
     if(device==="webgpu" && dtype==="fp16"){
-      dtype="fp32"; setIndeterminate("Loading","16-bit weights failed here, loading 32-bit");
+      dtype="fp32"; setIndeterminate("Loading","retrying at full precision");
       try{ estimator = await attempt(device,dtype); }
-      catch(e2){ device="wasm"; dtype="q8"; rBackend.textContent="wasm, cpu (fallback)"; setIndeterminate("Loading","retrying on cpu"); estimator = await attempt(device,dtype); }
-    } else if(device==="webgpu"){ // fall back to CPU/WASM once
-      device="wasm"; dtype="q8"; rBackend.textContent="wasm, cpu (fallback)";
-      setIndeterminate("Loading","retrying on cpu");
+      catch(e2){ device="wasm"; dtype="q8"; rBackend.textContent="running on the processor"; setIndeterminate("Loading","retrying on the processor"); estimator = await attempt(device,dtype); }
+    } else if(device==="webgpu"){
+      device="wasm"; dtype="q8"; rBackend.textContent="running on the processor";
+      setIndeterminate("Loading","retrying on the processor");
       estimator = await attempt(device,dtype);
     } else { throw e; }
   }
   loadedKey = modelId+"|"+dtype+"|"+device; warm=false;
   const downloaded=[...modelStore.stored].some(k=>!before.has(k));
-  refreshCacheLine(downloaded? "This model was just downloaded and saved; the next session loads it from disk." : "");
+  refreshCacheLine(downloaded? "Just saved — the next visit skips the download." : "");
   return estimator;
 }
 
 // ---- generate ----
 run.addEventListener("click", async ()=>{
-  if(!currentURL) return;
-  clearErr(); run.disabled=true; dl16.disabled=true; dl8.disabled=true;
+  if(!srcImg) return;
+  clearErr(); run.disabled=true; dl.disabled=true;
   setBusy(true); runNote.textContent="";
   stage.classList.add("scanning"); stage.classList.remove("ready","cmp"); placeholder.style.display="none";
-  const my=++runSeq; blob16=null; blob8=null; pending16=null;
-  const t0=performance.now(); let tModel=0, tScan=0, tUp=0;
+  const my=++runSeq; blobGrey=null; blobColor=null; pendingGrey=null; lastU16=null;
+  const t0=performance.now();
+  let inputURL=null;
   try{
     const est = await ensureModel();
-    tModel=performance.now()-t0;
-    if(device==="wasm" && parseInt(detailSel.value,10)>518) runNote.textContent="cpu mode: Standard detail is several times quicker";
-    else if(device==="webgpu" && !warm) runNote.textContent="first scan compiles the GPU shaders, later scans are quicker";
-    setIndeterminate("Scanning","scanning");
-    const tS=performance.now();
-    // Push the model to the chosen resolution: pre-size the input and stop the processor
-    // from shrinking it back to 518. Sharper depth then comes straight from the model.
-    const targetLong = parseInt(detailSel.value,10) || 518;
-    let inputURL = currentURL;
-    try{
-      const prep = prepInput(srcImg, targetLong);
-      forceRes(est, prep.w, prep.h);
-      inputURL = prep.url;
-      setState("scanning @ "+prep.w+"×"+prep.h);
-    }catch(e){
-      console.warn("hi-res prep failed, using default res:", e);
-      try{ const p0=est.processor||{}; [p0,p0.image_processor,p0.feature_extractor].filter(Boolean).forEach(p=>{try{ if(p.do_resize!==undefined) p.do_resize=true; }catch(_){}}); }catch(_){}
-      setState("scanning");
-    }
-    const output = await est(inputURL);
-    tScan=performance.now()-tS; warm=true;
-    const tU=performance.now();
+    const q=QUALITY[qualSel.value];
+    if(device==="wasm" && qualSel.value!=="fast") runNote.textContent="on the processor, Fast quality is several times quicker";
+    else if(device==="webgpu" && !warm) runNote.textContent="the first run warms up the graphics chip, later runs are quicker";
+    setIndeterminate("Working","reading the photo");
+    await yieldUI();
 
-    // pull depth data — prefer the float tensor for true 16-bit precision
+    const prep = await prepInput(srcImg, q.detail);
+    inputURL = prep.url;
+    forceRes(est, prep.w, prep.h);
+    setState("reading at "+prep.w+"×"+prep.h);
+    await yieldUI();
+
+    const output = await est(inputURL);
+    URL.revokeObjectURL(inputURL); inputURL=null;
+    warm=true;
+    await yieldUI();
+
+    // pull depth values — prefer the float tensor so the 16-bit output is real
     let src,W,H;
     if(output.predicted_depth && output.predicted_depth.data){
       const d=output.predicted_depth.dims;
@@ -731,95 +885,109 @@ run.addEventListener("click", async ()=>{
     } else {
       const ri=output.depth; W=ri.width; H=ri.height; src=ri.data;
     }
-    nDims.textContent = W+"×"+H;   // the resolution the model actually produced — verify hi-res took effect
 
-    // normalize the model output to 0..1 at its native resolution (don't invert yet)
     let mn=Infinity,mx=-Infinity;
     for(let i=0;i<src.length;i++){ const v=src[i]; if(v<mn)mn=v; if(v>mx)mx=v; }
     const range=(mx-mn)||1;
     const norm=new Float32Array(W*H);
     for(let i=0;i<W*H;i++){ norm[i]=(src[i]-mn)/range; }
 
-    const outW = srcW||W, outH = srcH||H;
-    const inv = invert.checked;
+    // output size, held under the device's memory ceiling
+    let outW=srcW, outH=srcH; const L=Math.max(outW,outH);
+    if(L>MAX_OUT){ const s=MAX_OUT/L; outW=Math.round(outW*s); outH=Math.round(outH*s); }
+
+    setState("building the map at "+outW+"×"+outH);
+    await yieldUI();
+
     let up;
     if(edgeAware.checked && srcImg){
-      // compact the depth to a small working res so edges are crisp regardless of model softness,
-      // then reconstruct full-res edges from the real photo. Values stay from the model — nothing invented.
-      setState("edge-aware upscale "+outW+"×"+outH);
-      const longSide=Math.max(W,H), work=Math.min(longSide,512);
+      const longSide=Math.max(W,H), work=Math.min(longSide, isMobile?384:512);
       const lw=Math.max(1,Math.round(W*work/longSide)), lh=Math.max(1,Math.round(H*work/longSide));
       const dLow=(lw===W&&lh===H)?norm:downsample(norm,W,H,lw,lh);
       const guide=buildGuide(srcImg,outW,outH);
       up=guidedUpsample(guide,outW,outH,dLow,lw,lh,4,0.004);
       for(let i=0;i<up.length;i++){ const v=up[i]; up[i]= v<0?0 : v>1?1 : v; }
     } else {
-      // plain scaling (16-bit precision preserved by resampling floats before quantizing)
-      setState("scaling to "+outW+"×"+outH);
       up=(outW===W&&outH===H)?norm:bilinearUpscale(norm,W,H,outW,outH);
     }
+    await yieldUI();
 
-    if(inv){ for(let i=0;i<up.length;i++) up[i]=1-up[i]; }
-    // re-normalize so the final map uses the full 16-bit range
+    // re-normalise so the map uses the whole range
     { let a=Infinity,b=-Infinity; for(let i=0;i<up.length;i++){const v=up[i]; if(v<a)a=v; if(v>b)b=v;}
       const rg=(b-a)||1; for(let i=0;i<up.length;i++) up[i]=(up[i]-a)/rg; }
 
+    // store depth once, un-inverted; direction and colour are applied at paint time
+    const n=outW*outH;
+    const u16=new Uint16Array(n);
     let bad=false;
-    const u16=new Uint16Array(outW*outH);
-    const rgba=new Uint8ClampedArray(outW*outH*4);
-    for(let i=0;i<outW*outH;i++){
-      const v=up[i]; if(v!==v){ bad=true; break; } u16[i]=Math.round(v*65535);
-      const g=Math.round(v*255); rgba[i*4]=g; rgba[i*4+1]=g; rgba[i*4+2]=g; rgba[i*4+3]=255;
-    }
-    if(bad) throw new Error("the model returned invalid depth values"+(loadedKey.includes("|fp16|")? " — switch Model back to Small (32-bit)":""));
+    for(let i=0;i<n;i++){ const v=up[i]; if(v!==v){ bad=true; break; } u16[i]=Math.round(v*65535); }
+    if(bad) throw new Error("the model returned invalid values — try Balanced quality");
+    up=null;
 
+    lastU16=u16; lastW=outW; lastH=outH;
     canvas.width=outW; canvas.height=outH;
-    ctx.putImageData(new ImageData(rgba,outW,outH),0,0);
+    repaint();
     canvas.style.display="block";
-    tUp=performance.now()-tU;
-
-    // the preview is up; encode the 16-bit PNG in the background and the 8-bit one only if asked for
-    pending16 = encodePNG16(u16,outW,outH).then(b=>{ if(my===runSeq) blob16=new Blob([b],{type:"image/png"}); })
-      .catch(e=>{ console.error(e); if(my===runSeq) showErr("Couldn't encode the 16-bit PNG: "+(e&&e.message? e.message:e)); });
 
     oDims.textContent = outW+"×"+outH;
+    outNote.textContent = (outW===srcW) ? "same as your photo" : "scaled down to fit this device's memory";
     compare.src = currentURL; stage.classList.add("ready");
-    dl16.disabled=false; dl8.disabled=false;
+    queueEncode();
+    dl.disabled=false;
     setState("done");
-    const s=(ms)=>(ms/1000).toFixed(1);
-    runNote.textContent = "done in "+s(performance.now()-t0)+" s: "+(tModel>500? "model "+s(tModel)+", ":"")+"scan "+s(tScan)+", upscale "+s(tUp);
+    runNote.textContent = "done in "+((performance.now()-t0)/1000).toFixed(1)+" s";
   }catch(e){
     console.error(e);
-    showErr("Couldn't generate the depth map: "+(e && e.message ? e.message : e)+
-            (device==="wasm"?" — try a smaller image, or host this file instead of opening it directly.":""));
-    setState("error"); placeholder.style.display = canvas.style.display==="block"?"none":"block";
+    if(inputURL) URL.revokeObjectURL(inputURL);
+    const msg=(e && e.message ? e.message : String(e));
+    showErr("Couldn't make the depth map: "+msg+
+      (isMobile? " — try Fast quality, or a smaller photo." : " — try Fast quality."));
+    setState("something went wrong"); placeholder.style.display = canvas.style.display==="block"?"none":"block";
   }finally{
     setBusy(false);
     stage.classList.remove("scanning"); run.disabled=false;
   }
 });
 
-// ---- downloads ----
-function save(blob,suffix){
-  if(!blob) return;
+// ---- download ----
+function queueEncode(){
+  if(colorize.checked || !lastU16 || !HAS_CS) return;
+  pendingGrey = encodePNG16(lastU16,lastW,lastH,invert.checked)
+    .then(b=>{ blobGrey=new Blob([b],{type:"image/png"}); })
+    .catch(e=>{ console.error(e); });
+}
+function fileName(kind){
   const ts=new Date().toISOString().replace(/[-:T]/g,"").slice(0,14);
   const base=(currentName.replace(/\.[^.]+$/,"")||"image");
-  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download=base+"_depth_"+ts+"_"+suffix+".png"; a.click(); URL.revokeObjectURL(a.href);
+  return base+"_depth_"+ts+"_"+kind+".png";
 }
-dl16.addEventListener("click", async ()=>{
-  if(!blob16 && pending16){
-    dl16.disabled=true; dl16.textContent="Encoding";
-    try{ await pending16; } finally{ dl16.textContent="16-bit PNG"; dl16.disabled=false; }
-  }
-  save(blob16,"16bit");
-});
-dl8.addEventListener("click", async ()=>{
-  if(!blob8){
-    dl8.disabled=true; dl8.textContent="Encoding";
-    try{ blob8 = await new Promise(res=>canvas.toBlob(res,"image/png")); } finally{ dl8.textContent="8-bit PNG"; dl8.disabled=false; }
-  }
-  save(blob8,"8bit");
+async function save(blob,name){
+  if(!blob) return;
+  // on phones the share sheet is the reliable way to get a file into the camera roll
+  try{
+    const f=new File([blob],name,{type:"image/png"});
+    if(isMobile && navigator.canShare && navigator.canShare({files:[f]})){
+      await navigator.share({files:[f], title:name}); return;
+    }
+  }catch(e){ if(e && e.name==="AbortError") return; }
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=name; a.rel="noopener";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),8000);
+}
+dl.addEventListener("click", async ()=>{
+  if(!lastU16) return;
+  dl.disabled=true; const was=dlNote.textContent; dlNote.textContent="preparing…";
+  try{
+    if(colorize.checked || !HAS_CS){
+      if(!blobColor) blobColor = await new Promise(res=>canvas.toBlob(res,"image/png"));
+      await save(blobColor, fileName(colorize.checked? "color":"depth"));
+    }else{
+      if(!blobGrey){ if(!pendingGrey) queueEncode(); await pendingGrey; }
+      await save(blobGrey, fileName("16bit"));
+    }
+  }catch(e){ console.error(e); showErr("Couldn't save the file: "+(e&&e.message?e.message:e)); }
+  finally{ dlNote.textContent=was; dl.disabled=false; }
 });
 </script>
 </body>
