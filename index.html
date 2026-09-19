@@ -62,18 +62,16 @@
     border-bottom:1px solid rgba(0,0,0,.09);
   }
   .nav-in{
-    max-width:1180px;margin:0 auto;height:46px;display:flex;align-items:center;gap:24px;
+    max-width:1180px;margin:0 auto;height:46px;
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
     padding-left:max(var(--edge),env(safe-area-inset-left));
     padding-right:max(var(--edge),env(safe-area-inset-right));
   }
-  .nav .mark{display:flex;align-items:center;gap:8px;flex:none;}
-  .nav .glyph{width:13px;height:13px;border-radius:50%;flex:none;
-    background:conic-gradient(from 210deg,#1d1d1f,#8e8e93,#1d1d1f);}
-  .nav .wordmark{font-size:12px;font-weight:600;letter-spacing:.2em;color:#1d1d1f;}
-  .nav .links{display:flex;align-items:center;gap:24px;min-width:0;}
+  .nav .links{grid-column:2;display:flex;align-items:center;justify-content:center;gap:26px;min-width:0;}
   .nav a{font-size:12px;color:#1d1d1f;opacity:.82;text-decoration:none;white-space:nowrap;}
   .nav a:hover{opacity:1;}
-  .nav .right{margin-left:auto;font-size:12px;color:#1d1d1f;opacity:.66;white-space:nowrap;flex:none;}
+  .nav .right{grid-column:3;justify-self:end;font-size:12px;color:#1d1d1f;opacity:.66;white-space:nowrap;}
+  .nav .right b{font-weight:600;letter-spacing:.14em;opacity:.9;}
 
   .banner{background:#fff;border-bottom:1px solid rgba(0,0,0,.07);}
   .banner-in{
@@ -284,7 +282,6 @@
     :root{--r-frame:34px;--r-hero:26px;--r-tile:22px;--r-half:18px;--gap:10px;--pad:16px;--edge:12px;}
     .page{padding-top:18px;padding-bottom:30px;}
     .frame{padding:10px;}
-    .nav .wordmark{letter-spacing:.16em;}
     .board{
       grid-template-columns:repeat(2,minmax(0,1fr));
       grid-template-areas:
@@ -309,13 +306,12 @@
 
 <nav class="nav">
   <div class="nav-in">
-    <span class="mark"><i class="glyph"></i><span class="wordmark">COCOON</span></span>
     <span class="links">
       <a href="#tool">Generator</a>
       <a href="#how">How it works</a>
       <a href="#privacy">Privacy</a>
     </span>
-    <span class="right">cocoon generator by ALI&#174;</span>
+    <span class="right"><b>COCOON</b> generator by ALI&#174;</span>
   </div>
 </nav>
 <div class="banner">
