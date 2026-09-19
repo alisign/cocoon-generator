@@ -193,7 +193,8 @@
   .toggle:active{transform:scale(.985);}
   /* colour toggle: a small hue wheel, the way a picker swatch reads */
   .col .swatch{
-    position:absolute;right:var(--pad);top:var(--pad);width:24px;height:24px;border-radius:50%;z-index:2;
+    position:absolute;right:var(--pad);top:var(--pad);width:26px;height:26px;border-radius:50%;z-index:4;
+    appearance:none;-webkit-appearance:none;border:0;padding:0;cursor:pointer;
     background:
       radial-gradient(circle at 50% 50%, #fff 0%, rgba(255,255,255,.92) 26%, rgba(255,255,255,0) 66%),
       conic-gradient(from 90deg,#f5484a,#f5c542,#5fcf6a,#3fc7d4,#4a7bf0,#a45ef0,#f5484a);
@@ -201,6 +202,42 @@
     transition:box-shadow .3s,transform .3s;
   }
   .col.on .swatch{box-shadow:inset 0 0 0 1px rgba(255,255,255,.5), 0 0 0 3px rgba(255,255,255,.14);}
+  .col .swatch:active{transform:scale(.92);}
+  .col .swatch:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+
+  /* ---- colour picker panel (figma-ish) ---- */
+  .cp{
+    position:fixed;z-index:60;width:254px;background:#1e1e1e;border-radius:14px;padding:12px;
+    box-shadow:0 14px 44px rgba(0,0,0,.42), inset 0 0 0 1px rgba(255,255,255,.09);
+    color:#e8e8e8;font-size:11.5px;line-height:1.35;
+  }
+  .cp[hidden]{display:none;}
+  .cp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .cp-title{font-weight:500;letter-spacing:.02em;}
+  .cp-x{appearance:none;border:0;background:none;color:#9a9a9a;font-size:15px;line-height:1;cursor:pointer;padding:2px 5px;}
+  .cp-x:hover{color:#fff;}
+  .cp-sv{position:relative;height:130px;border-radius:8px;cursor:crosshair;touch-action:none;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);}
+  .cp-hue{position:relative;height:12px;border-radius:999px;margin-top:10px;cursor:pointer;touch-action:none;
+    background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);}
+  .cp-dot{position:absolute;width:13px;height:13px;border-radius:50%;border:2px solid #fff;
+    box-shadow:0 1px 4px rgba(0,0,0,.6);transform:translate(-50%,-50%);pointer-events:none;}
+  .cp-hue .cp-dot{top:50%;}
+  .cp-row{display:flex;align-items:center;gap:8px;margin-top:10px;}
+  .cp-hex{display:flex;align-items:center;gap:3px;background:#2c2c2c;border-radius:7px;padding:6px 8px;flex:1;min-width:0;}
+  .cp-hex input{appearance:none;border:0;background:none;color:#e8e8e8;font:inherit;width:100%;min-width:0;
+    text-transform:uppercase;letter-spacing:.06em;outline:none;font-size:11.5px;}
+  .cp-stops{display:flex;gap:5px;flex:none;}
+  .cp-stops button{width:25px;height:25px;border-radius:7px;border:0;padding:0;cursor:pointer;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);}
+  .cp-stops button.sel{box-shadow:inset 0 0 0 1px rgba(255,255,255,.3), 0 0 0 2px #4a7bf0;}
+  .cp-lab{margin:13px 0 7px;color:#8e8e8e;}
+  .cp-pre{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+  .cp-pre button{height:26px;border-radius:7px;border:0;padding:0;cursor:pointer;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);}
+  .cp-pre button.sel{box-shadow:inset 0 0 0 1px rgba(255,255,255,.2), 0 0 0 2px #4a7bf0;}
+  .cp-foot{margin-top:11px;color:#8e8e8e;}
 
   /* ---- near / far ramp: a swatch column sitting directly on the frame ---- */
   .rmp{background:transparent;box-shadow:none;padding:0;overflow:visible;}
@@ -277,6 +314,7 @@
   }
   @media (max-width:700px){
     .nav .links{display:none;}
+    .cp{left:10px !important;right:10px;bottom:10px !important;top:auto !important;width:auto;}
     .steps{grid-template-columns:1fr;}
   }
   @media (max-width:620px){
@@ -377,10 +415,10 @@
       <!-- colour -->
       <label class="tile sq toggle col" id="colTile" for="colorize">
         <input type="checkbox" id="colorize" />
-        <i class="swatch"></i>
+        <button type="button" class="swatch" id="cpOpen" aria-label="Choose colors"></button>
         <span class="big" id="colBig">Off</span>
         <span class="label">Color</span>
-        <span class="note">colored version, just for looks — grey is the one you edit with</span>
+        <span class="note">tap the wheel to pick colors — grey is the one you edit with</span>
       </label>
 
       <!-- close / far key -->
@@ -423,6 +461,23 @@
     <p><span id="cacheLine">The model downloads once (about 50&nbsp;MB) and is kept on this device, so later visits skip it.</span> <button class="link" id="clearCache" type="button">Clear saved model</button></p>
     <p class="sig">made by ALI&#174; &nbsp;·&nbsp; inspired by yeat's cocoon</p>
   </footer>
+</div>
+
+<div class="cp" id="cp" hidden role="dialog" aria-label="Color">
+  <div class="cp-head"><span class="cp-title">Color</span><button class="cp-x" id="cpX" type="button" aria-label="Close">&#10005;</button></div>
+  <div class="cp-sv" id="cpSV"><i class="cp-dot" id="cpSVDot"></i></div>
+  <div class="cp-hue" id="cpHue"><i class="cp-dot" id="cpHueDot"></i></div>
+  <div class="cp-row">
+    <span class="cp-hex">#<input id="cpHex" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Hex" /></span>
+    <span class="cp-stops" id="cpStops">
+      <button type="button" data-s="0" title="Closest"></button>
+      <button type="button" data-s="1" title="Middle"></button>
+      <button type="button" data-s="2" title="Farthest"></button>
+    </span>
+  </div>
+  <div class="cp-lab">Presets</div>
+  <div class="cp-pre" id="cpPre"></div>
+  <div class="cp-foot">The three squares are closest, middle and farthest.</div>
 </div>
 
 <script type="module">
@@ -493,10 +548,12 @@ const ctx=canvas.getContext("2d",{alpha:false});
 const ramp=$("ramp"), stack=$("stack"), oDims=$("oDims"), outNote=$("outNote"), dl=$("dl"), dlNote=$("dlNote");
 const rBackend=$("rBackend"), rState=$("rState"), dot=$("dot");
 const cacheLine=$("cacheLine"), clearCache=$("clearCache");
+const cp=$("cp"), cpOpen=$("cpOpen"), cpX=$("cpX"), cpSV=$("cpSV"), cpSVDot=$("cpSVDot");
+const cpHue=$("cpHue"), cpHueDot=$("cpHueDot"), cpHex=$("cpHex"), cpStops=$("cpStops"), cpPre=$("cpPre");
 
 let currentURL=null, currentName="", estimator=null, loadedKey=null, device="wasm";
 let blobGrey=null, blobColor=null, pendingGrey=null, runSeq=0;
-let srcW=0, srcH=0, srcImg=null;
+let srcW=0, srcH=0, workW=0, workH=0, srcImg=null;
 let lastU16=null, lastW=0, lastH=0;   // kept so the Color toggle can repaint without re-running the model
 let busy=false, warm=false, gpuF16=false;
 
@@ -512,6 +569,10 @@ const MAX_OUT = isMobile ? (RAM<=3 ? 1400 : 2048) : 4096;
 if(isMobile) qualSel.value="fast";
 // Safari only got CompressionStream in 16.4; without it the 16-bit encoder can't run
 const HAS_CS = (typeof CompressionStream !== "undefined");
+// on a phone the processor path blocks the main thread for seconds; the proxy runs it in a worker
+let useProxy = isMobile;
+function setProxy(on){ try{ env.backends.onnx.wasm.proxy = on; }catch(e){} }
+setProxy(useProxy);
 
 // let the browser paint between the heavy stages
 const yieldUI = ()=> new Promise(r=> requestAnimationFrame(()=> setTimeout(r,0)));
@@ -564,22 +625,73 @@ function setIndeterminate(big,label){ run.classList.add("indet"); pFill.style.he
 function showErr(msg){ err.textContent = msg; err.classList.add("on"); }
 function clearErr(){ err.classList.remove("on"); }
 
-// ---- turbo colour map, built once into a 256-entry lookup table ----
-const TURBO = (()=>{
-  const stops=[[0,48,18,59],[.13,65,69,171],[.25,57,118,215],[.38,27,166,205],[.5,37,203,160],
-               [.63,110,227,97],[.75,188,229,49],[.87,243,186,35],[.95,250,129,17],[1,122,4,3]];
-  const lut=new Uint8Array(256*3);
+// ---- colour maps: any stop list becomes a 256-entry lookup table ----
+// interpolation runs in Oklab so a ramp between two colours never dips through mud
+const hex2rgb=(h)=>{ h=h.replace("#","").trim();
+  if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  const n=parseInt(h,16); return [(n>>16)&255,(n>>8)&255,n&255]; };
+const rgb2hex=(r,g,b)=>"#"+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,"0")).join("");
+const sRGBtoLin=(c)=>{ c/=255; return c<=0.04045? c/12.92 : Math.pow((c+0.055)/1.055,2.4); };
+const linTosRGB=(c)=>{ const v=c<=0.0031308? c*12.92 : 1.055*Math.pow(Math.max(c,0),1/2.4)-0.055;
+  return Math.max(0,Math.min(255,Math.round(v*255))); };
+function rgb2oklab(r,g,b){
+  const R=sRGBtoLin(r),G=sRGBtoLin(g),B=sRGBtoLin(b);
+  const l=Math.cbrt(0.4122214708*R+0.5363325363*G+0.0514459929*B);
+  const m=Math.cbrt(0.2119034982*R+0.6806995451*G+0.1073969566*B);
+  const s2=Math.cbrt(0.0883024619*R+0.2817188376*G+0.6299787005*B);
+  return [0.2104542553*l+0.7936177850*m-0.0040720468*s2,
+          1.9779984951*l-2.4285922050*m+0.4505937099*s2,
+          0.0259040371*l+0.7827717662*m-0.8086757660*s2];
+}
+function oklab2rgb(L,A,B2){
+  const l=Math.pow(L+0.3963377774*A+0.2158037573*B2,3);
+  const m=Math.pow(L-0.1055613458*A-0.0638541728*B2,3);
+  const s2=Math.pow(L-0.0894841775*A-1.2914855480*B2,3);
+  return [linTosRGB( 4.0767416621*l-3.3077115913*m+0.2309699292*s2),
+          linTosRGB(-1.2684380046*l+2.6097574011*m-0.3413193965*s2),
+          linTosRGB(-0.0041960863*l-0.7034186147*m+1.7076147010*s2)];
+}
+function buildLUT(stops){
+  const pts=stops.map(([p,h])=>{ const [r,g,b]=hex2rgb(h); return [p, rgb2oklab(r,g,b)]; })
+                 .sort((x,y)=>x[0]-y[0]);
+  const lut=new Uint8Array(768);
   for(let i=0;i<256;i++){
-    const t=i/255; let a=stops[0], b=stops[stops.length-1];
-    for(let s=0;s<stops.length-1;s++){ if(t>=stops[s][0] && t<=stops[s+1][0]){ a=stops[s]; b=stops[s+1]; break; } }
-    const f=(b[0]-a[0])? (t-a[0])/(b[0]-a[0]) : 0;
-    lut[i*3]  = Math.round(a[1]+(b[1]-a[1])*f);
-    lut[i*3+1]= Math.round(a[2]+(b[2]-a[2])*f);
-    lut[i*3+2]= Math.round(a[3]+(b[3]-a[3])*f);
+    const t=i/255; let A=pts[0], B=pts[pts.length-1];
+    for(let k=0;k<pts.length-1;k++){ if(t>=pts[k][0] && t<=pts[k+1][0]){ A=pts[k]; B=pts[k+1]; break; } }
+    const span=(B[0]-A[0]), f= span? (t-A[0])/span : 0;
+    const c=oklab2rgb(A[1][0]+(B[1][0]-A[1][0])*f, A[1][1]+(B[1][1]-A[1][1])*f, A[1][2]+(B[1][2]-A[1][2])*f);
+    lut[i*3]=c[0]; lut[i*3+1]=c[1]; lut[i*3+2]=c[2];
   }
   return lut;
-})();
-const turboCSS=(t)=>{ const i=Math.max(0,Math.min(255,Math.round(t*255)))*3; return "rgb("+TURBO[i]+","+TURBO[i+1]+","+TURBO[i+2]+")"; };
+}
+// stop position 1 is the closest thing in the photo, 0 the farthest
+const PRESETS = {
+  turbo:  ["Turbo",  [[0,"#30123b"],[.13,"#4145ab"],[.25,"#4675ed"],[.38,"#1bb3d0"],[.5,"#25d9a0"],[.63,"#6ee361"],[.75,"#bce531"],[.87,"#f3ba23"],[.95,"#fa8111"],[1,"#7a0403"]]],
+  mono:   ["Mono",   [[0,"#000000"],[1,"#ffffff"]]],
+  ice:    ["Ice",    [[0,"#050f1c"],[.5,"#2273a3"],[1,"#e3f6ff"]]],
+  ember:  ["Ember",  [[0,"#12060a"],[.5,"#b0361a"],[1,"#ffe0ad"]]],
+  violet: ["Violet", [[0,"#160b2b"],[.5,"#7b4bd8"],[1,"#ffd7f2"]]],
+  sand:   ["Sand",   [[0,"#1d1a15"],[.5,"#9a8362"],[1,"#f4ecdc"]]]
+};
+let customStops = [[1,"#f2f2f2"],[.5,"#7d7d7d"],[0,"#141414"]];   // closest, middle, farthest
+let mapMode = "turbo";
+let LUT = buildLUT(PRESETS.turbo[1]);
+try{
+  const saved=JSON.parse(localStorage.getItem("cocoon-map")||"null");
+  if(saved && saved.mode){
+    if(saved.mode==="custom" && Array.isArray(saved.stops)){ customStops=saved.stops; mapMode="custom"; }
+    else if(PRESETS[saved.mode]) mapMode=saved.mode;
+    LUT = buildLUT(mapMode==="custom"? customStops : PRESETS[mapMode][1]);
+  }
+}catch(e){}
+function saveMap(){ try{ localStorage.setItem("cocoon-map", JSON.stringify({mode:mapMode, stops:customStops})); }catch(e){} }
+function applyMap(){ LUT = buildLUT(mapMode==="custom"? customStops : PRESETS[mapMode][1]); }
+const lutCSS=(t)=>{ const i=Math.max(0,Math.min(255,Math.round(t*255)))*3; return "rgb("+LUT[i]+","+LUT[i+1]+","+LUT[i+2]+")"; };
+const gradCSS=(stops)=>{
+  const l=buildLUT(stops), out=[];
+  for(let i=0;i<=10;i++){ const k=Math.round(i/10*255)*3; out.push("rgb("+l[k]+","+l[k+1]+","+l[k+2]+") "+(i*10)+"%"); }
+  return "linear-gradient(90deg,"+out.join(",")+")";
+};
 
 // ---- controls ----
 function syncQuality(){
@@ -607,9 +719,10 @@ function paintRamp(){
   const kids=stack.children;
   for(let i=0;i<5;i++){
     if(colorize.checked){
-      let t=i/4; if(invert.checked) t=1-t;
-      kids[i].style.background=turboCSS(t);
-      kids[i].style.color = (t<0.22||t>0.86) ? "#fff" : "#141414";
+      let t=1-i/4; if(invert.checked) t=1-t;
+      kids[i].style.background=lutCSS(t);
+      const k=Math.round(t*255)*3, lum=(0.299*LUT[k]+0.587*LUT[k+1]+0.114*LUT[k+2])/255;
+      kids[i].style.color = lum<0.55 ? "#fff" : "#141414";
     }else{
       kids[i].style.background=""; kids[i].style.color="";
     }
@@ -619,6 +732,123 @@ qualSel.addEventListener("change", syncQuality);
 invert.addEventListener("change", ()=>{ syncToggles(); repaint(); });
 edgeAware.addEventListener("change", syncToggles);
 colorize.addEventListener("change", ()=>{ syncToggles(); repaint(); });
+
+// ---- colour picker ----
+function rgb2hsv(r,g,b){
+  r/=255;g/=255;b/=255;
+  const mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn;
+  let h=0;
+  if(d){ h = mx===r ? ((g-b)/d+(g<b?6:0)) : mx===g ? ((b-r)/d+2) : ((r-g)/d+4); h*=60; }
+  return [h, mx? d/mx : 0, mx];
+}
+function hsv2rgb(h,s,v){
+  h=((h%360)+360)%360;
+  const c=v*s, x=c*(1-Math.abs((h/60)%2-1)), m=v-c;
+  let r=0,g=0,b=0;
+  if(h<60){r=c;g=x;} else if(h<120){r=x;g=c;} else if(h<180){g=c;b=x;}
+  else if(h<240){g=x;b=c;} else if(h<300){r=x;b=c;} else {r=c;b=x;}
+  return [Math.round((r+m)*255),Math.round((g+m)*255),Math.round((b+m)*255)];
+}
+let cpStop=0, cpH=0, cpS=0, cpV=1, cpLive=false;
+
+function cpRenderPresets(){
+  cpPre.innerHTML="";
+  for(const key of Object.keys(PRESETS)){
+    const [name,stops]=PRESETS[key];
+    const b=document.createElement("button");
+    b.type="button"; b.title=name; b.style.background=gradCSS(stops);
+    b.className = (mapMode===key? "sel":"");
+    b.addEventListener("click",()=>{
+      mapMode=key; applyMap(); saveMap();
+      if(!colorize.checked){ colorize.checked=true; }
+      syncToggles(); repaint(); cpRenderPresets(); cpRenderStops();
+    });
+    cpPre.appendChild(b);
+  }
+}
+function cpRenderStops(){
+  [...cpStops.children].forEach((b,i)=>{
+    b.style.background=customStops[i][1];
+    b.className = (mapMode==="custom" && i===cpStop) ? "sel" : "";
+  });
+}
+function cpPaintSV(){
+  cpSV.style.background =
+    "linear-gradient(to top, #000, rgba(0,0,0,0)), linear-gradient(to right, #fff, "+rgb2hex(...hsv2rgb(cpH,1,1))+")";
+  cpSVDot.style.left=(cpS*100)+"%"; cpSVDot.style.top=((1-cpV)*100)+"%";
+  cpSVDot.style.background=rgb2hex(...hsv2rgb(cpH,cpS,cpV));
+  cpHueDot.style.left=(cpH/360*100)+"%";
+  cpHueDot.style.background=rgb2hex(...hsv2rgb(cpH,1,1));
+}
+function cpSetFromHex(h,writeInput){
+  const [r,g,b]=hex2rgb(h); const [H,S,V]=rgb2hsv(r,g,b);
+  cpH=H; cpS=S; cpV=V; cpPaintSV();
+  if(writeInput!==false) cpHex.value=rgb2hex(r,g,b).slice(1).toUpperCase();
+}
+function cpCommit(){
+  const hexv=rgb2hex(...hsv2rgb(cpH,cpS,cpV));
+  customStops[cpStop][1]=hexv;
+  cpHex.value=hexv.slice(1).toUpperCase();
+  mapMode="custom"; applyMap(); saveMap();
+  if(!colorize.checked) colorize.checked=true;
+  syncToggles(); cpRenderStops(); cpRenderPresets();
+  if(!cpLive) repaint();        // while dragging, repaint is throttled below
+}
+// dragging the square / strip repaints at most once a frame
+let cpFrame=0;
+function cpThrottled(){
+  if(cpFrame) return;
+  cpFrame=requestAnimationFrame(()=>{ cpFrame=0; repaint(); });
+}
+function dragger(el, onMove){
+  const at=(e)=>{ const r=el.getBoundingClientRect();
+    onMove(Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)), Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))); };
+  el.addEventListener("pointerdown",(e)=>{ e.preventDefault(); el.setPointerCapture(e.pointerId);
+    cpLive=true; at(e); cpCommit(); cpThrottled(); });
+  el.addEventListener("pointermove",(e)=>{ if(!el.hasPointerCapture||!el.hasPointerCapture(e.pointerId)) return;
+    at(e); cpCommit(); cpThrottled(); });
+  const end=()=>{ if(cpLive){ cpLive=false; repaint(); } };
+  el.addEventListener("pointerup",end); el.addEventListener("pointercancel",end);
+}
+dragger(cpSV,(x,y)=>{ cpS=x; cpV=1-y; cpPaintSV(); });
+dragger(cpHue,(x)=>{ cpH=x*360; cpPaintSV(); });
+
+cpHex.addEventListener("input",()=>{
+  const v=cpHex.value.replace(/[^0-9a-fA-F]/g,"");
+  if(v.length===3||v.length===6){ cpSetFromHex(v,false); cpCommit(); }
+});
+[...cpStops.children].forEach(b=>b.addEventListener("click",()=>{
+  cpStop=+b.dataset.s; mapMode="custom"; applyMap(); saveMap();
+  cpSetFromHex(customStops[cpStop][1]);
+  if(!colorize.checked) colorize.checked=true;
+  syncToggles(); repaint(); cpRenderStops(); cpRenderPresets();
+}));
+
+function cpPlace(){
+  const r=cpOpen.getBoundingClientRect();
+  if(matchMedia("(max-width:700px)").matches) return;   // css pins it to the bottom
+  let top=r.bottom+10, left=r.right-254;
+  left=Math.max(10,Math.min(left, innerWidth-264));
+  if(top+360>innerHeight) top=Math.max(10, r.top-370);
+  cp.style.top=top+"px"; cp.style.left=left+"px"; cp.style.bottom="auto";
+}
+function cpShow(){
+  cp.hidden=false; cpPlace();
+  cpSetFromHex(customStops[cpStop][1]);
+  cpRenderStops(); cpRenderPresets();
+}
+function cpHide(){ cp.hidden=true; }
+cpOpen.addEventListener("click",(e)=>{
+  e.preventDefault(); e.stopPropagation();      // don't let the label toggle Color
+  if(cp.hidden){ if(!colorize.checked){ colorize.checked=true; syncToggles(); repaint(); } cpShow(); }
+  else cpHide();
+});
+cpX.addEventListener("click",cpHide);
+cp.addEventListener("click",(e)=>e.stopPropagation());
+document.addEventListener("click",(e)=>{ if(!cp.hidden && !cp.contains(e.target) && e.target!==cpOpen) cpHide(); });
+document.addEventListener("keydown",(e)=>{ if(e.key==="Escape") cpHide(); });
+addEventListener("resize",()=>{ if(!cp.hidden) cpPlace(); });
+
 syncQuality(); syncToggles();
 
 // repaint the preview from the depth values already in memory (colour / direction flips are free)
@@ -629,7 +859,7 @@ function repaint(){
   const inv=invert.checked, col=colorize.checked;
   for(let i=0;i<n;i++){
     let v=lastU16[i]/65535; if(inv) v=1-v;
-    if(col){ const k=(v*255|0)*3; rgba[i*4]=TURBO[k]; rgba[i*4+1]=TURBO[k+1]; rgba[i*4+2]=TURBO[k+2]; }
+    if(col){ const k=(v*255|0)*3; rgba[i*4]=LUT[k]; rgba[i*4+1]=LUT[k+1]; rgba[i*4+2]=LUT[k+2]; }
     else { const g=Math.round(v*255); rgba[i*4]=g; rgba[i*4+1]=g; rgba[i*4+2]=g; }
     rgba[i*4+3]=255;
   }
@@ -653,8 +883,18 @@ async function loadFile(file){
       try{ img = await createImageBitmap(file,{imageOrientation:"from-image"}); }
       catch(e){ img = await decodeViaImg(currentURL); }
     } else { img = await decodeViaImg(currentURL); }
-    srcImg = img;
     srcW = img.width; srcH = img.height;
+    // everything downstream works at the capped size, so shrink once here and release the full-size decode
+    let ww=srcW, wh=srcH; const L0=Math.max(ww,wh);
+    if(L0>MAX_OUT){ const k=MAX_OUT/L0; ww=Math.round(ww*k); wh=Math.round(wh*k); }
+    const wc=document.createElement("canvas"); wc.width=ww; wc.height=wh;
+    wc.getContext("2d",{alpha:false}).drawImage(img,0,0,ww,wh);
+    if(img.close) { try{ img.close(); }catch(e){} }
+    srcImg = wc; workW=ww; workH=wh;
+    // a small preview feeds both the thumbnail and the hold-to-compare view
+    const prevBlob = await new Promise(r=>wc.toBlob(r,"image/jpeg",0.85));
+    URL.revokeObjectURL(currentURL);
+    currentURL = URL.createObjectURL(prevBlob);
   }catch(e){
     showErr(/hei[cf]/i.test(file.type+file.name)
       ? "This browser can't open HEIC photos. On iPhone, pick the photo from the library (Safari converts it) or save it as JPEG first."
@@ -666,12 +906,11 @@ async function loadFile(file){
   fName.textContent = currentName; fDims.textContent = srcW+"×"+srcH;
   fileMeta.style.visibility="visible";
 
-  let outW=srcW, outH=srcH; const L=Math.max(outW,outH);
-  if(L>MAX_OUT){ const s=MAX_OUT/L; outW=Math.round(outW*s); outH=Math.round(outH*s); }
-  oDims.textContent = outW+"×"+outH;
-  outNote.textContent = (outW===srcW) ? "same as your photo" : "scaled down to fit this device's memory";
+  oDims.textContent = workW+"×"+workH;
+  outNote.textContent = (workW===srcW) ? "same as your photo" : "scaled down to fit this device's memory";
 
   run.disabled=false; runNote.textContent = warm ? "" : "first run downloads the model once";
+  ensureModel(true).catch(()=>{});   // warm it up while they look at the photo
   dl.disabled=true; lastU16=null; blobGrey=null; blobColor=null; pendingGrey=null;
   canvas.style.display="none"; stage.classList.remove("ready","cmp"); placeholder.style.display="block";
   setState("ready");
@@ -805,7 +1044,13 @@ function forceRes(est, tw, th){
 }
 
 // ---- model loading ----
-async function ensureModel(){
+let modelPromise=null;
+function ensureModel(quiet){
+  if(modelPromise) return modelPromise;
+  modelPromise = loadModel(quiet).finally(()=>{ modelPromise=null; });
+  return modelPromise;
+}
+async function loadModel(quiet){
   await deviceReady;
   const q=QUALITY[qualSel.value];
   const modelId=MODELS[q.model];
@@ -813,14 +1058,15 @@ async function ensureModel(){
   const key = modelId+"|"+dtype+"|"+device;
   if(estimator && loadedKey===key) return estimator;
   estimator=null;
-  setIndeterminate("Loading","getting the model");
-  setState("getting the model");
+  if(!quiet) setIndeterminate("Loading","getting the model");
+  setState(quiet? "getting the model ready" : "getting the model");
   const before=new Set(modelStore.stored);
   const progress_callback=(d)=>{
     if(d.status==="progress" && d.total){
       const pct=Math.min(100,Math.round((d.loaded/d.total)*100));
       const fromDisk=[...modelStore.hits].some(k=>d.file && k.endsWith("/"+d.file));
-      setProgress(pct, fromDisk? "loading from this device" : "downloading the model");
+      if(!quiet) setProgress(pct, fromDisk? "loading from this device" : "downloading the model");
+      else setState((fromDisk? "loading model " : "downloading model ")+pct+"%");
     }
   };
   const attempt=(dev,dt)=>pipeline("depth-estimation", modelId, { device:dev, dtype:dt, progress_callback });
@@ -829,18 +1075,24 @@ async function ensureModel(){
   }catch(e){
     console.warn("load failed on", device, dtype, e);
     if(device==="webgpu" && dtype==="fp16"){
-      dtype="fp32"; setIndeterminate("Loading","retrying at full precision");
+      dtype="fp32"; if(!quiet) setIndeterminate("Loading","retrying at full precision");
       try{ estimator = await attempt(device,dtype); }
-      catch(e2){ device="wasm"; dtype="q8"; rBackend.textContent="running on the processor"; setIndeterminate("Loading","retrying on the processor"); estimator = await attempt(device,dtype); }
+      catch(e2){ device="wasm"; dtype="q8"; rBackend.textContent="running on the processor"; if(!quiet) setIndeterminate("Loading","retrying on the processor"); estimator = await attempt(device,dtype); }
     } else if(device==="webgpu"){
       device="wasm"; dtype="q8"; rBackend.textContent="running on the processor";
-      setIndeterminate("Loading","retrying on the processor");
+      if(!quiet) setIndeterminate("Loading","retrying on the processor");
+      estimator = await attempt(device,dtype);
+    } else if(useProxy){
+      // some browsers block the worker; fall back to running it inline
+      useProxy=false; setProxy(false);
+      if(!quiet) setIndeterminate("Loading","retrying");
       estimator = await attempt(device,dtype);
     } else { throw e; }
   }
   loadedKey = modelId+"|"+dtype+"|"+device; warm=false;
   const downloaded=[...modelStore.stored].some(k=>!before.has(k));
   refreshCacheLine(downloaded? "Just saved — the next visit skips the download." : "");
+  if(quiet) setState("ready");
   return estimator;
 }
 
@@ -854,6 +1106,7 @@ run.addEventListener("click", async ()=>{
   const t0=performance.now();
   let inputURL=null;
   try{
+    if(modelPromise) setIndeterminate("Loading","getting the model");
     const est = await ensureModel();
     const q=QUALITY[qualSel.value];
     if(device==="wasm" && qualSel.value!=="fast") runNote.textContent="on the processor, Fast quality is several times quicker";
@@ -889,10 +1142,7 @@ run.addEventListener("click", async ()=>{
     const norm=new Float32Array(W*H);
     for(let i=0;i<W*H;i++){ norm[i]=(src[i]-mn)/range; }
 
-    // output size, held under the device's memory ceiling
-    let outW=srcW, outH=srcH; const L=Math.max(outW,outH);
-    if(L>MAX_OUT){ const s=MAX_OUT/L; outW=Math.round(outW*s); outH=Math.round(outH*s); }
-
+    const outW=workW, outH=workH;
     setState("building the map at "+outW+"×"+outH);
     await yieldUI();
 
