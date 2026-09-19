@@ -196,12 +196,15 @@
     position:absolute;right:var(--pad);top:var(--pad);width:26px;height:26px;border-radius:50%;z-index:4;
     appearance:none;-webkit-appearance:none;border:0;padding:0;cursor:pointer;
     background:
-      radial-gradient(circle at 50% 50%, #fff 0%, rgba(255,255,255,.92) 26%, rgba(255,255,255,0) 66%),
+      radial-gradient(circle at 50% 50%, #fff 0%, #fff 34%, rgba(255,255,255,0) 37%),
       conic-gradient(from 90deg,#f5484a,#f5c542,#5fcf6a,#3fc7d4,#4a7bf0,#a45ef0,#f5484a);
-    box-shadow:inset 0 0 0 1px rgba(0,0,0,.14);
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.22);
     transition:box-shadow .3s,transform .3s;
   }
   .col.on .swatch{box-shadow:inset 0 0 0 1px rgba(255,255,255,.5), 0 0 0 3px rgba(255,255,255,.14);}
+  .col-hit{position:absolute;inset:0;z-index:2;appearance:none;-webkit-appearance:none;
+    border:0;padding:0;margin:0;background:none;cursor:pointer;border-radius:inherit;}
+  .col-hit:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
   .col .swatch:active{transform:scale(.92);}
   .col .swatch:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
 
@@ -413,13 +416,14 @@
       </label>
 
       <!-- colour -->
-      <label class="tile sq toggle col" id="colTile" for="colorize">
-        <input type="checkbox" id="colorize" />
+      <div class="tile sq toggle col" id="colTile">
+        <input type="checkbox" id="colorize" hidden />
+        <button type="button" class="col-hit" id="colHit" aria-label="Turn color on or off" aria-pressed="false"></button>
         <button type="button" class="swatch" id="cpOpen" aria-label="Choose colors"></button>
         <span class="big" id="colBig">Off</span>
         <span class="label">Color</span>
         <span class="note">tap the wheel to pick colors — grey is the one you edit with</span>
-      </label>
+      </div>
 
       <!-- close / far key -->
       <div class="tile sq rmp" id="ramp" aria-label="Key: closest to farthest">
@@ -548,7 +552,7 @@ const ctx=canvas.getContext("2d",{alpha:false});
 const ramp=$("ramp"), stack=$("stack"), oDims=$("oDims"), outNote=$("outNote"), dl=$("dl"), dlNote=$("dlNote");
 const rBackend=$("rBackend"), rState=$("rState"), dot=$("dot");
 const cacheLine=$("cacheLine"), clearCache=$("clearCache");
-const cp=$("cp"), cpOpen=$("cpOpen"), cpX=$("cpX"), cpSV=$("cpSV"), cpSVDot=$("cpSVDot");
+const cp=$("cp"), cpOpen=$("cpOpen"), colHit=$("colHit"), cpX=$("cpX"), cpSV=$("cpSV"), cpSVDot=$("cpSVDot");
 const cpHue=$("cpHue"), cpHueDot=$("cpHueDot"), cpHex=$("cpHex"), cpStops=$("cpStops"), cpPre=$("cpPre");
 
 let currentURL=null, currentName="", estimator=null, loadedKey=null, device="wasm";
@@ -712,6 +716,7 @@ function syncToggles(){
   edgeBig.textContent = edgeAware.checked ? "On" : "Off";
   colTile.classList.toggle("on",colorize.checked);
   colBig.textContent = colorize.checked ? "On" : "Off";
+  colHit.setAttribute("aria-pressed", colorize.checked? "true":"false");
   dlNote.textContent = colorize.checked ? "color PNG" : (HAS_CS ? "16-bit PNG" : "PNG");
   paintRamp();
 }
@@ -731,7 +736,7 @@ function paintRamp(){
 qualSel.addEventListener("change", syncQuality);
 invert.addEventListener("change", ()=>{ syncToggles(); repaint(); });
 edgeAware.addEventListener("change", syncToggles);
-colorize.addEventListener("change", ()=>{ syncToggles(); repaint(); });
+colHit.addEventListener("click", ()=>{ colorize.checked=!colorize.checked; syncToggles(); repaint(); });
 
 // ---- colour picker ----
 function rgb2hsv(r,g,b){
@@ -839,7 +844,7 @@ function cpShow(){
 }
 function cpHide(){ cp.hidden=true; }
 cpOpen.addEventListener("click",(e)=>{
-  e.preventDefault(); e.stopPropagation();      // don't let the label toggle Color
+  e.preventDefault(); e.stopPropagation();
   if(cp.hidden){ if(!colorize.checked){ colorize.checked=true; syncToggles(); repaint(); } cpShow(); }
   else cpHide();
 });
